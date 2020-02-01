@@ -1,0 +1,60 @@
+{
+  "name": "create-ts-starter",
+  "version": "2.0.4",
+  "description": "Typescript Opinionated Starter/Boilerplate",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/saostad/node-typescript-starter.git"
+  },
+  "main": "dist/app.js",
+  "types": "dist/app.d.ts",
+  "bin": "bin/setup",
+  "scripts": {
+    "format": "prettier --check \"src/**/*.ts\" --write",
+    "lint": "eslint --ext \".ts,.js\" src --quiet",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "tsc": "tsc",
+    "tsc:watch": "tsc --watch",
+    "prepublishOnly": "npm run tsc",
+    "prod": "node dist/app.js",
+    "dev": "nodemon --watch dist --exec \"npm run prod\"",
+    "dev:docker": "nodemon -L --watch dist --exec \"npm run prod\"",
+    "start": "npm-run-all -p dev tsc:watch"
+  },
+  "keywords": [
+    "node",
+    "typescript",
+    "boilerplate",
+    "starter"
+  ],
+  "author": "Saeid Ostad",
+  "license": "MIT",
+  "nodemonConfig": {
+    "ignore": [
+      "test/*",
+      "docs/*"
+    ],
+    "delay": "1000"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.9.0",
+    "@types/node": "^13.1.8",
+    "@typescript-eslint/eslint-plugin": "^2.17.0",
+    "@typescript-eslint/parser": "^2.17.0",
+    "dotenv": "^8.2.0",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.9.0",
+    "eslint-plugin-prettier": "^3.1.2",
+    "jest": "^25.1.0",
+    "nodemon": "^2.0.2",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^1.19.1",
+    "ts-jest": "^24.3.0",
+    "ts-node": "^8.6.2",
+    "typescript": "^3.7.5"
+  },
+  "dependencies": {
+    "fast-node-logger": "^1.0.1"
+  }
+}
