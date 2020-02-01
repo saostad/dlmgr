@@ -15,15 +15,33 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv_1 = __importDefault(require("dotenv"));
 const fast_node_logger_1 = require("fast-node-logger");
 dotenv_1.default.config();
+const puppeteer_1 = __importDefault(require("puppeteer"));
 function main() {
     return __awaiter(this, void 0, void 0, function* () {
         yield fast_node_logger_1.createLogger();
         /** put your code below here */
-        fast_node_logger_1.writeLog("logger started!", { stdout: true });
-        fast_node_logger_1.writeLog(`here is my secret: ${process.env.MY_SECRET}`, { stdout: true });
-        return process.env.MY_SECRET;
+        const browser = yield puppeteer_1.default.launch();
+        const page = yield browser.newPage();
+        yield page.goto("https://satina.website/download-friends/", {
+            waitUntil: "networkidle2",
+        });
+        const hyperlinks = yield page.$$("a");
+        const data = hyperlinks.map((el) => __awaiter(this, void 0, void 0, function* () {
+            const prop = yield el.getProperty("href");
+            const hrefLink = (yield prop.jsonValue());
+            if (hrefLink.includes("1080")) {
+                return hrefLink;
+            }
+            return false;
+        }));
+        const links = yield Promise.all(data);
+        const correctLinks = links.filter(el => el !== false);
+        console.log(`File: app.ts,`, `Line: 32 => `, correctLinks);
+        yield browser.close();
     });
 }
 exports.main = main;
-main();
+main().catch(err => {
+    console.log(`File: app.ts,`, `Line: 35 => `, err);
+});
 //# sourceMappingURL=app.js.map
