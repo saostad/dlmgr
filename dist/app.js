@@ -27,80 +27,10 @@ var __asyncValues = (this && this.__asyncValues) || function (o) {
     function verb(n) { i[n] = o[n] && function (v) { return new Promise(function (resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
     function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const fast_node_logger_1 = require("fast-node-logger");
-const cheerio_1 = __importDefault(require("cheerio"));
-const axios_1 = __importDefault(require("axios"));
-const http_1 = __importDefault(require("http"));
-const url_1 = __importDefault(require("url"));
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
-const cli_progress_1 = __importDefault(require("cli-progress"));
-const https_1 = __importDefault(require("https"));
-/**Configs */
-const fetchUrl = "https://satina.website/download-friends/";
-const elementToFindInPage = "a";
-const propToSearchInElements = "href";
-const keyWord = "1080";
-const defaultDownloadDir = path_1.default.join(process.cwd(), "downloads");
-const downloadDir = undefined;
-/** convert byte to mega byte */
-const byteToMB = (input) => {
-    let number;
-    if (typeof input === "number") {
-        number = input;
-    }
-    else {
-        number = parseInt(input);
-    }
-    const result = (number / 1024 / 1024).toFixed(2);
-    return Number(result);
-};
-function downloadFile(linkToDownload) {
-    return new Promise((resolve, reject) => {
-        const { protocol, hostname, pathname } = url_1.default.parse(linkToDownload);
-        const progress = new cli_progress_1.default.SingleBar({ format: "progress [{bar}] {percentage}% | {value}MB/{total}MB" }, cli_progress_1.default.Presets.shades_classic);
-        fast_node_logger_1.writeLog(`downloading file ${linkToDownload}`, { stdout: true });
-        http_1.default.get(linkToDownload, res => {
-            var _a;
-            if (res.statusCode === 302) {
-                const newLocation = res.headers.location;
-                const redirectedUrl = `${protocol}//${hostname}${newLocation}`;
-                const filename = (_a = pathname) === null || _a === void 0 ? void 0 : _a.slice(pathname.lastIndexOf("/") + 1);
-                const pathInFS = path_1.default.join((downloadDir !== null && downloadDir !== void 0 ? downloadDir : defaultDownloadDir), filename);
-                http_1.default.get(redirectedUrl, res => {
-                    if (res.statusCode === 200) {
-                        /** file size in bytes */
-                        const fileSize = res.headers["content-length"];
-                        const fileInFS = fs_1.default.createWriteStream(pathInFS);
-                        let totalReceivedData = 0;
-                        progress.start(byteToMB(fileSize), 0);
-                        res.on("error", function (err) {
-                            progress.stop();
-                            fast_node_logger_1.writeLog(err, { stdout: true, level: "fatal" });
-                            reject(err);
-                        });
-                        res.on("data", function dataChunkHandler(chunk) {
-                            totalReceivedData += chunk.length;
-                            progress.update(byteToMB(totalReceivedData));
-                        });
-                        res.on("end", function end() {
-                            progress.stop();
-                            fast_node_logger_1.writeLog(`${filename} successfully downloaded`, {
-                                stdout: true,
-                            });
-                            resolve(true);
-                        });
-                        res.pipe(fileInFS);
-                    }
-                });
-            }
-        });
-    });
-}
+const scraper_1 = require("./scraper");
+const download_1 = require("./download");
 function main() {
     var e_1, _a;
     return __awaiter(this, void 0, void 0, function* () {
@@ -110,36 +40,12 @@ function main() {
                 translateTime: "SYS:standard",
             },
         });
-        fast_node_logger_1.writeLog(`opening page ${fetchUrl}`, { stdout: true });
-        const agentHTTPS = new https_1.default.Agent();
-        const agentHTTP = new http_1.default.Agent();
-        const response = yield axios_1.default.get(fetchUrl, {
-            method: "GET",
-            httpAgent: agentHTTP,
-            httpsAgent: agentHTTPS,
-        });
-        if (!response.status.toString().startsWith("2")) {
-            throw `url ${fetchUrl} is not valid!`;
-        }
-        const $ = cheerio_1.default.load(response.data);
-        fast_node_logger_1.writeLog(`searching for keyword '${keyWord}' in href of a HTML tags`, {
-            stdout: true,
-        });
-        /**filter s elements with content of their link contain '1080'
-         * for just getting full hd links
-         * otherwise return false
-         */
-        const rawLinks = [];
-        $(elementToFindInPage).each((index, element) => {
-            if (element.attribs[propToSearchInElements].includes(keyWord)) {
-                rawLinks.push(element.attribs[propToSearchInElements]);
-            }
-        });
+        const rawLinks = yield scraper_1.scrap();
         function start() {
             return __asyncGenerator(this, arguments, function* start_1() {
                 let index = 0;
                 while (index < rawLinks.length) {
-                    const result = yield __await(downloadFile(rawLinks[index]));
+                    const result = yield __await(download_1.downloadFile(rawLinks[index]));
                     index++;
                     yield yield __await(result);
                 }
