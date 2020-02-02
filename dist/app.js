@@ -102,6 +102,7 @@ function downloadFile(linkToDownload) {
     });
 }
 function main() {
+    var e_1, _a;
     return __awaiter(this, void 0, void 0, function* () {
         yield fast_node_logger_1.createLogger({
             prettyPrint: {
@@ -144,22 +145,21 @@ function main() {
                 }
             });
         }
-        (() => __awaiter(this, void 0, void 0, function* () {
-            var e_1, _a;
+        try {
+            for (var _b = __asyncValues(start()), _c; _c = yield _b.next(), !_c.done;) {
+                const iterator = _c.value;
+                if (iterator === true) {
+                    fast_node_logger_1.writeLog(`going to next link`);
+                }
+            }
+        }
+        catch (e_1_1) { e_1 = { error: e_1_1 }; }
+        finally {
             try {
-                for (var _b = __asyncValues(start()), _c; _c = yield _b.next(), !_c.done;) {
-                    const iterator = _c.value;
-                    console.log(`File: app.ts,`, `Line: 142 => `, iterator);
-                }
+                if (_c && !_c.done && (_a = _b.return)) yield _a.call(_b);
             }
-            catch (e_1_1) { e_1 = { error: e_1_1 }; }
-            finally {
-                try {
-                    if (_c && !_c.done && (_a = _b.return)) yield _a.call(_b);
-                }
-                finally { if (e_1) throw e_1.error; }
-            }
-        }))();
+            finally { if (e_1) throw e_1.error; }
+        }
     });
 }
 exports.main = main;

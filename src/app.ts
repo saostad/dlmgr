@@ -136,11 +136,11 @@ export async function main() {
     }
   }
 
-  (async () => {
-    for await (const iterator of start()) {
-      console.log(`File: app.ts,`, `Line: 142 => `, iterator);
+  for await (const iterator of start()) {
+    if (iterator === true) {
+      writeLog(`going to next link`);
     }
-  })();
+  }
 }
 
 main().catch(err => {
