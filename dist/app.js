@@ -31,9 +31,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const dotenv_1 = __importDefault(require("dotenv"));
 const fast_node_logger_1 = require("fast-node-logger");
-dotenv_1.default.config();
 const puppeteer_1 = __importDefault(require("puppeteer"));
 const http_1 = __importDefault(require("http"));
 const url_1 = __importDefault(require("url"));

@@ -1,6 +1,4 @@
-import dotenv from "dotenv";
 import { createLogger, writeLog } from "fast-node-logger";
-dotenv.config();
 import puppeteer from "puppeteer";
 import http from "http";
 import url from "url";
