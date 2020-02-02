@@ -29,8 +29,9 @@ var __asyncValues = (this && this.__asyncValues) || function (o) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const fast_node_logger_1 = require("fast-node-logger");
-const scraper_1 = require("./scraper");
-const download_1 = require("./download");
+const downloadFile_1 = require("./downloadFile");
+const downloadList_1 = require("./downloadList");
+const path_1 = require("path");
 function main() {
     var e_1, _a;
     return __awaiter(this, void 0, void 0, function* () {
@@ -40,12 +41,24 @@ function main() {
                 translateTime: "SYS:standard",
             },
         });
-        const rawLinks = yield scraper_1.scrap();
+        // const rawLinks = await getListFromUri({
+        //   uri: fetchUrl,
+        //   keyWord: keyWord,
+        //   propToSearchInElements,
+        //   elementToFindInPage,
+        // });
+        // await saveListToFile({
+        //   data: rawLinks,
+        //   filePath: join(process.cwd(), "export.txt"),
+        // });
+        const rawLinks = yield downloadList_1.getListFromFile({
+            filePath: path_1.join(process.cwd(), "export.txt"),
+        });
         function start() {
             return __asyncGenerator(this, arguments, function* start_1() {
                 let index = 0;
                 while (index < rawLinks.length) {
-                    const result = yield __await(download_1.downloadFile(rawLinks[index]));
+                    const result = yield __await(downloadFile_1.downloadFile(rawLinks[index]));
                     index++;
                     yield yield __await(result);
                 }
@@ -70,6 +83,6 @@ function main() {
 }
 exports.main = main;
 main().catch(err => {
-    fast_node_logger_1.writeLog(err);
+    fast_node_logger_1.writeLog(err, { stdout: true });
 });
 //# sourceMappingURL=app.js.map

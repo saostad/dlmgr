@@ -1,6 +1,17 @@
 import { createLogger, writeLog } from "fast-node-logger";
-import { scrap } from "./scraper";
-import { downloadFile } from "./download";
+import { downloadFile } from "./downloadFile";
+import {
+  getListFromUri,
+  saveListToFile,
+  getListFromFile,
+} from "./downloadList";
+import {
+  fetchUrl,
+  keyWord,
+  propToSearchInElements,
+  elementToFindInPage,
+} from "./helpers/variables";
+import { join } from "path";
 
 export async function main() {
   await createLogger({
@@ -10,7 +21,21 @@ export async function main() {
     },
   });
 
-  const rawLinks = await scrap();
+  // const rawLinks = await getListFromUri({
+  //   uri: fetchUrl,
+  //   keyWord: keyWord,
+  //   propToSearchInElements,
+  //   elementToFindInPage,
+  // });
+
+  // await saveListToFile({
+  //   data: rawLinks,
+  //   filePath: join(process.cwd(), "export.txt"),
+  // });
+
+  const rawLinks = await getListFromFile({
+    filePath: join(process.cwd(), "export.txt"),
+  });
 
   async function* start() {
     let index = 0;
@@ -29,5 +54,5 @@ export async function main() {
 }
 
 main().catch(err => {
-  writeLog(err);
+  writeLog(err, { stdout: true });
 });

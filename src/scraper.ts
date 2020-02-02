@@ -1,23 +1,27 @@
 import axios from "axios";
 import cheerio from "cheerio";
 import { writeLog } from "fast-node-logger";
-import {
+import { ScrapInput } from "./typings/interfaces";
+
+async function getUriBody(uri: string) {
+  const response = await axios.get(uri);
+  if (!response.status.toString().startsWith("2")) {
+    throw `url ${uri} is not valid!`;
+  }
+  return response.data;
+}
+
+export async function scrap({
+  uri,
+  keyWord,
   elementToFindInPage,
   propToSearchInElements,
-  keyWord,
-  fetchUrl,
-} from "./helpers/variables";
+}: ScrapInput) {
+  writeLog(`opening page ${uri}`, { stdout: true });
 
-export async function scrap() {
-  writeLog(`opening page ${fetchUrl}`, { stdout: true });
+  const body = await getUriBody(uri);
 
-  const response = await axios.get(fetchUrl);
-
-  if (!response.status.toString().startsWith("2")) {
-    throw `url ${fetchUrl} is not valid!`;
-  }
-
-  const $ = cheerio.load(response.data);
+  const $ = cheerio.load(body);
 
   writeLog(`searching for keyword '${keyWord}' in href of a HTML tags`, {
     stdout: true,

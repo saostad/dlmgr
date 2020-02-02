@@ -15,16 +15,21 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const axios_1 = __importDefault(require("axios"));
 const cheerio_1 = __importDefault(require("cheerio"));
 const fast_node_logger_1 = require("fast-node-logger");
-const variables_1 = require("./helpers/variables");
-function scrap() {
+function getUriBody(uri) {
     return __awaiter(this, void 0, void 0, function* () {
-        fast_node_logger_1.writeLog(`opening page ${variables_1.fetchUrl}`, { stdout: true });
-        const response = yield axios_1.default.get(variables_1.fetchUrl);
+        const response = yield axios_1.default.get(uri);
         if (!response.status.toString().startsWith("2")) {
-            throw `url ${variables_1.fetchUrl} is not valid!`;
+            throw `url ${uri} is not valid!`;
         }
-        const $ = cheerio_1.default.load(response.data);
-        fast_node_logger_1.writeLog(`searching for keyword '${variables_1.keyWord}' in href of a HTML tags`, {
+        return response.data;
+    });
+}
+function scrap({ uri, keyWord, elementToFindInPage, propToSearchInElements, }) {
+    return __awaiter(this, void 0, void 0, function* () {
+        fast_node_logger_1.writeLog(`opening page ${uri}`, { stdout: true });
+        const body = yield getUriBody(uri);
+        const $ = cheerio_1.default.load(body);
+        fast_node_logger_1.writeLog(`searching for keyword '${keyWord}' in href of a HTML tags`, {
             stdout: true,
         });
         /**filter s elements with content of their link contain '1080'
@@ -32,9 +37,9 @@ function scrap() {
          * otherwise return false
          */
         const rawLinks = [];
-        $(variables_1.elementToFindInPage).each((index, element) => {
-            if (element.attribs[variables_1.propToSearchInElements].includes(variables_1.keyWord)) {
-                rawLinks.push(element.attribs[variables_1.propToSearchInElements]);
+        $(elementToFindInPage).each((index, element) => {
+            if (element.attribs[propToSearchInElements].includes(keyWord)) {
+                rawLinks.push(element.attribs[propToSearchInElements]);
             }
         });
         return rawLinks;
