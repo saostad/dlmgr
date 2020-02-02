@@ -31,7 +31,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const fast_node_logger_1 = require("fast-node-logger");
 const downloadFile_1 = require("./downloadFile");
 const downloadList_1 = require("./downloadList");
-const path_1 = require("path");
+const variables_1 = require("./helpers/variables");
 function main() {
     var e_1, _a;
     return __awaiter(this, void 0, void 0, function* () {
@@ -49,16 +49,18 @@ function main() {
         // });
         // await saveListToFile({
         //   data: rawLinks,
-        //   filePath: join(process.cwd(), "export.txt"),
+        //   filePath: downloadListFileLocation,
         // });
         const rawLinks = yield downloadList_1.getListFromFile({
-            filePath: path_1.join(process.cwd(), "export.txt"),
+            filePath: variables_1.downloadListFileLocation,
         });
         function start() {
             return __asyncGenerator(this, arguments, function* start_1() {
                 let index = 0;
                 while (index < rawLinks.length) {
-                    const result = yield __await(downloadFile_1.downloadFile(rawLinks[index]));
+                    const result = yield __await(downloadFile_1.downloadFile(rawLinks[index]).catch(err => {
+                        fast_node_logger_1.writeLog(err, { level: "error" });
+                    }));
                     index++;
                     yield yield __await(result);
                 }

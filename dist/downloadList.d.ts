@@ -3,10 +3,16 @@ export declare function getListFromUri({ uri, elementToFindInPage, propToSearchI
 interface GetListFromFileInput {
     filePath: string;
 }
-export declare function getListFromFile({ filePath }: GetListFromFileInput): Promise<string[]>;
+export declare function getListFromFile({ filePath, }: GetListFromFileInput): Promise<string[]>;
 interface SaveListToFileInput {
     filePath: string;
     data: string[];
 }
-export declare function saveListToFile({ filePath, data }: SaveListToFileInput): Promise<unknown>;
+export declare function saveListToFile({ filePath, data, }: SaveListToFileInput): Promise<boolean>;
+interface UpdateListFileInput {
+    link: string;
+    status: "success" | "fail";
+    filePath: string;
+}
+export declare function updateListFile({ link, status, filePath, }: UpdateListFileInput): Promise<boolean>;
 export {};

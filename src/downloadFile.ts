@@ -6,7 +6,13 @@ import fs from "fs";
 import cliProgress from "cli-progress";
 import { writeLog } from "fast-node-logger";
 import { byteToMB } from "./helpers/utils";
-import { downloadDir, defaultDownloadDir } from "./helpers/variables";
+import {
+  downloadDir,
+  defaultDownloadDir,
+  trackingMode,
+  downloadListFileLocation,
+} from "./helpers/variables";
+import { updateListFile } from "./downloadList";
 
 export function downloadFile(linkToDownload: string): Promise<boolean> {
   return new Promise((resolve, reject) => {
@@ -18,49 +24,60 @@ export function downloadFile(linkToDownload: string): Promise<boolean> {
     );
 
     writeLog(`downloading file ${linkToDownload}`, { stdout: true });
+
+    let checkedLink = linkToDownload;
+
     http.get(linkToDownload, res => {
       if (res.statusCode === 302) {
         const newLocation = res.headers.location;
 
         const redirectedUrl = `${protocol}//${hostname}${newLocation}`;
-
-        const filename = pathname?.slice(
-          pathname.lastIndexOf("/") + 1,
-        ) as string;
-
-        const pathInFS = path.join(downloadDir ?? defaultDownloadDir, filename);
-        http.get(redirectedUrl, res => {
-          if (res.statusCode === 200) {
-            /** file size in bytes */
-            const fileSize = res.headers["content-length"] as string;
-
-            const fileInFS = fs.createWriteStream(pathInFS);
-            let totalReceivedData = 0;
-            progress.start(byteToMB(fileSize), 0);
-
-            res.on("error", function(err) {
-              progress.stop();
-              writeLog(err, { stdout: true, level: "fatal" });
-              reject(err);
-            });
-
-            res.on("data", function dataChunkHandler(chunk) {
-              totalReceivedData += chunk.length;
-              progress.update(byteToMB(totalReceivedData));
-            });
-
-            res.on("end", function end() {
-              progress.stop();
-              writeLog(`${filename} successfully downloaded`, {
-                stdout: true,
-              });
-              resolve(true);
-            });
-
-            res.pipe(fileInFS);
-          }
-        });
+        checkedLink = redirectedUrl;
       }
+      const filename = pathname?.slice(pathname.lastIndexOf("/") + 1) as string;
+
+      const pathInFS = path.join(downloadDir ?? defaultDownloadDir, filename);
+      http.get(checkedLink, res => {
+        if (res.statusCode === 200) {
+          /** file size in bytes */
+          const fileSize = res.headers["content-length"] as string;
+
+          const fileInFS = fs.createWriteStream(pathInFS);
+          let totalReceivedData = 0;
+          progress.start(byteToMB(fileSize), 0);
+
+          res.on("error", function(err) {
+            progress.stop();
+            writeLog(err, { stdout: true, level: "fatal" });
+            reject(err);
+          });
+
+          res.on("data", function dataChunkHandler(chunk) {
+            totalReceivedData += chunk.length;
+            progress.update(byteToMB(totalReceivedData));
+          });
+
+          res.on("end", function end() {
+            progress.stop();
+            writeLog(`${filename} successfully downloaded`, {
+              stdout: true,
+            });
+
+            if (trackingMode) {
+              /** update the text file and add # in beginning of the line of successfully downloaded link */
+              updateListFile({
+                filePath: downloadListFileLocation,
+                link: linkToDownload,
+                status: "success",
+              });
+            }
+
+            resolve(true);
+          });
+
+          res.pipe(fileInFS);
+        }
+      });
     });
   });
 }

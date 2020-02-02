@@ -10,4 +10,6 @@ exports.propToSearchInElements = "href";
 exports.keyWord = "1080";
 exports.defaultDownloadDir = path_1.default.join(process.cwd(), "downloads");
 exports.downloadDir = undefined;
+exports.trackingMode = true;
+exports.downloadListFileLocation = path_1.default.join(process.cwd(), "export.txt");
 //# sourceMappingURL=variables.js.map

@@ -6,3 +6,5 @@ export const propToSearchInElements = "href";
 export const keyWord = "1080";
 export const defaultDownloadDir = path.join(process.cwd(), "downloads");
 export const downloadDir = undefined;
+export const trackingMode = true;
+export const downloadListFileLocation = path.join(process.cwd(), "export.txt");

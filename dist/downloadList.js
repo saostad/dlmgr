@@ -34,7 +34,7 @@ function getListFromUri({ uri, elementToFindInPage, propToSearchInElements, keyW
     });
 }
 exports.getListFromUri = getListFromUri;
-function getListFromFile({ filePath }) {
+function getListFromFile({ filePath, }) {
     var e_1, _a;
     return __awaiter(this, void 0, void 0, function* () {
         const fileStream = fs_1.default.createReadStream(filePath, { encoding: "utf8" });
@@ -64,11 +64,12 @@ function getListFromFile({ filePath }) {
             }
             finally { if (e_1) throw e_1.error; }
         }
+        fileStream.close();
         return links;
     });
 }
 exports.getListFromFile = getListFromFile;
-function saveListToFile({ filePath, data }) {
+function saveListToFile({ filePath, data, }) {
     return __awaiter(this, void 0, void 0, function* () {
         return new Promise((resolve, reject) => {
             const writeFileStream = fs_1.default.createWriteStream(filePath);
@@ -82,7 +83,7 @@ function saveListToFile({ filePath, data }) {
                     counter++;
                     if (counter === data.length) {
                         writeFileStream.end(() => {
-                            resolve("done!");
+                            resolve(true);
                         });
                     }
                 });
@@ -91,4 +92,46 @@ function saveListToFile({ filePath, data }) {
     });
 }
 exports.saveListToFile = saveListToFile;
+function updateListFile({ link, status, filePath, }) {
+    var e_2, _a;
+    return __awaiter(this, void 0, void 0, function* () {
+        const fileStream = fs_1.default.createReadStream(filePath, { encoding: "utf8" });
+        fileStream.on("open", () => {
+            fast_node_logger_1.writeLog(`read file ${filePath} started`, { level: "trace" });
+        });
+        fileStream.on("close", () => {
+            fast_node_logger_1.writeLog(`read file ${filePath} finished`, { level: "trace" });
+        });
+        const rl = readline_1.default.createInterface({
+            input: fileStream,
+            crlfDelay: Infinity,
+        });
+        const links = [];
+        try {
+            for (var rl_2 = __asyncValues(rl), rl_2_1; rl_2_1 = yield rl_2.next(), !rl_2_1.done;) {
+                const line = rl_2_1.value;
+                if (line === link) {
+                    if (status === "success") {
+                        /** add # in beginning of the line to prevent from downloading it next time */
+                        links.push(`#${line}`);
+                    }
+                }
+                else {
+                    links.push(line);
+                }
+            }
+        }
+        catch (e_2_1) { e_2 = { error: e_2_1 }; }
+        finally {
+            try {
+                if (rl_2_1 && !rl_2_1.done && (_a = rl_2.return)) yield _a.call(rl_2);
+            }
+            finally { if (e_2) throw e_2.error; }
+        }
+        fileStream.close();
+        /**time to rewrite the file with updated data */
+        return saveListToFile({ filePath, data: links });
+    });
+}
+exports.updateListFile = updateListFile;
 //# sourceMappingURL=downloadList.js.map

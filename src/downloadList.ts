@@ -21,7 +21,77 @@ export async function getListFromUri({
 interface GetListFromFileInput {
   filePath: string;
 }
-export async function getListFromFile({ filePath }: GetListFromFileInput) {
+export async function getListFromFile({
+  filePath,
+}: GetListFromFileInput): Promise<string[]> {
+  const fileStream = fs.createReadStream(filePath, { encoding: "utf8" });
+
+  fileStream.on("open", () => {
+    writeLog(`read file ${filePath} started`, { level: "trace" });
+  });
+
+  fileStream.on("close", () => {
+    writeLog(`read file ${filePath} finished`, { level: "trace" });
+  });
+
+  const rl = readline.createInterface({
+    input: fileStream,
+    crlfDelay: Infinity,
+  });
+
+  const links = [];
+
+  for await (const line of rl) {
+    if (!line.startsWith("#")) {
+      links.push(line);
+    }
+  }
+  fileStream.close();
+  return links;
+}
+
+interface SaveListToFileInput {
+  filePath: string;
+  data: string[];
+}
+export async function saveListToFile({
+  filePath,
+  data,
+}: SaveListToFileInput): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    const writeFileStream = fs.createWriteStream(filePath);
+
+    let counter = 0;
+
+    data.forEach(el => {
+      writeFileStream.write(`${el}\n`, err => {
+        if (err) {
+          writeLog(err, { level: "error" });
+          reject(err);
+        }
+
+        counter++;
+
+        if (counter === data.length) {
+          writeFileStream.end(() => {
+            resolve(true);
+          });
+        }
+      });
+    });
+  });
+}
+
+interface UpdateListFileInput {
+  link: string;
+  status: "success" | "fail";
+  filePath: string;
+}
+export async function updateListFile({
+  link,
+  status,
+  filePath,
+}: UpdateListFileInput) {
   const fileStream = fs.createReadStream(filePath, { encoding: "utf8" });
 
   fileStream.on("open", () => {
@@ -39,39 +109,18 @@ export async function getListFromFile({ filePath }: GetListFromFileInput) {
 
   const links = [];
   for await (const line of rl) {
-    if (!line.startsWith("#")) {
+    if (line === link) {
+      if (status === "success") {
+        /** add # in beginning of the line to prevent from downloading it next time */
+        links.push(`#${line}`);
+      }
+    } else {
       links.push(line);
     }
   }
 
-  return links;
-}
+  fileStream.close();
 
-interface SaveListToFileInput {
-  filePath: string;
-  data: string[];
-}
-export async function saveListToFile({ filePath, data }: SaveListToFileInput) {
-  return new Promise((resolve, reject) => {
-    const writeFileStream = fs.createWriteStream(filePath);
-
-    let counter = 0;
-
-    data.forEach(el => {
-      writeFileStream.write(`${el}\n`, err => {
-        if (err) {
-          writeLog(err, { level: "error" });
-          reject(err);
-        }
-
-        counter++;
-
-        if (counter === data.length) {
-          writeFileStream.end(() => {
-            resolve("done!");
-          });
-        }
-      });
-    });
-  });
+  /**time to rewrite the file with updated data */
+  return saveListToFile({ filePath, data: links });
 }

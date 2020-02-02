@@ -10,8 +10,8 @@ import {
   keyWord,
   propToSearchInElements,
   elementToFindInPage,
+  downloadListFileLocation,
 } from "./helpers/variables";
-import { join } from "path";
 
 export async function main() {
   await createLogger({
@@ -30,17 +30,19 @@ export async function main() {
 
   // await saveListToFile({
   //   data: rawLinks,
-  //   filePath: join(process.cwd(), "export.txt"),
+  //   filePath: downloadListFileLocation,
   // });
 
   const rawLinks = await getListFromFile({
-    filePath: join(process.cwd(), "export.txt"),
+    filePath: downloadListFileLocation,
   });
 
   async function* start() {
     let index = 0;
     while (index < rawLinks.length) {
-      const result = await downloadFile(rawLinks[index]);
+      const result = await downloadFile(rawLinks[index]).catch(err => {
+        writeLog(err, { level: "error" });
+      });
       index++;
       yield result;
     }
