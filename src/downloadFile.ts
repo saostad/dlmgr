@@ -1,5 +1,6 @@
 import url from "url";
 import http from "http";
+import https from "https";
 import path from "path";
 import fs from "fs";
 
@@ -14,6 +15,56 @@ import {
 } from "./helpers/variables";
 import { updateListFile } from "./downloadList";
 
+/** some websites redirect link to another location
+ * this function follows the redirect and get the final link
+ * it handle http or https links
+ */
+function getRealLink(linkToCheck: string): Promise<string> {
+  writeLog(`getRealLink()`, { level: "trace" });
+  return new Promise((resolve, reject) => {
+    const onError = (err: Error, cb: any) => {
+      writeLog(err, { stdout: true, level: "error" });
+      cb(err);
+    };
+
+    const { protocol, hostname } = url.parse(linkToCheck);
+
+    if (protocol?.toLowerCase() === "https:") {
+      https.get(linkToCheck, res => {
+        if (res.statusCode?.toString().startsWith("2")) {
+          /** thats a real file */
+          res.destroy();
+          resolve(linkToCheck);
+        }
+
+        res.on("error", err => onError(err, reject));
+
+        if (res.statusCode === 302) {
+          const newLocation = res.headers.location;
+
+          resolve(url.format({ protocol, hostname, pathname: newLocation }));
+        }
+      });
+    } else {
+      http.get(linkToCheck, res => {
+        if (res.statusCode?.toString().startsWith("2")) {
+          /** thats a real file */
+          res.destroy();
+          resolve(linkToCheck);
+        }
+
+        res.on("error", err => onError(err, reject));
+
+        if (res.statusCode === 302) {
+          const newLocation = res.headers.location;
+
+          resolve(url.format({ protocol, hostname, pathname: newLocation }));
+        }
+      });
+    }
+  });
+}
+
 export function downloadFile(linkToDownload: string): Promise<boolean> {
   return new Promise((resolve, reject) => {
     const { protocol, hostname, pathname } = url.parse(linkToDownload);
@@ -25,59 +76,91 @@ export function downloadFile(linkToDownload: string): Promise<boolean> {
 
     writeLog(`downloading file ${linkToDownload}`, { stdout: true });
 
-    let checkedLink = linkToDownload;
+    const filename = pathname?.slice(pathname.lastIndexOf("/") + 1) as string;
 
-    http.get(linkToDownload, res => {
-      if (res.statusCode === 302) {
-        const newLocation = res.headers.location;
+    const pathInFS = path.join(downloadDir ?? defaultDownloadDir, filename);
 
-        const redirectedUrl = `${protocol}//${hostname}${newLocation}`;
-        checkedLink = redirectedUrl;
+    getRealLink(linkToDownload).then(checkedLink => {
+      const { path: urlPath } = url.parse(checkedLink);
+
+      let totalReceivedData = 0;
+
+      function onError(err: Error) {
+        progress.stop();
+        writeLog(err, { stdout: true, level: "fatal" });
+        reject(err);
       }
-      const filename = pathname?.slice(pathname.lastIndexOf("/") + 1) as string;
 
-      const pathInFS = path.join(downloadDir ?? defaultDownloadDir, filename);
-      http.get(checkedLink, res => {
-        if (res.statusCode === 200) {
-          /** file size in bytes */
-          const fileSize = res.headers["content-length"] as string;
+      function onDataChunk(chunk: any) {
+        totalReceivedData += chunk.length;
+        progress.update(byteToMB(totalReceivedData));
+      }
 
-          const fileInFS = fs.createWriteStream(pathInFS);
-          let totalReceivedData = 0;
-          progress.start(byteToMB(fileSize), 0);
+      function onEnd() {
+        progress.stop();
+        writeLog(`${filename} successfully downloaded`, {
+          stdout: true,
+        });
 
-          res.on("error", function(err) {
-            progress.stop();
-            writeLog(err, { stdout: true, level: "fatal" });
-            reject(err);
+        if (trackingMode) {
+          /** update the text file and add # in beginning of the line of successfully downloaded link */
+          updateListFile({
+            filePath: downloadListFileLocation,
+            link: linkToDownload,
+            status: "success",
           });
-
-          res.on("data", function dataChunkHandler(chunk) {
-            totalReceivedData += chunk.length;
-            progress.update(byteToMB(totalReceivedData));
-          });
-
-          res.on("end", function end() {
-            progress.stop();
-            writeLog(`${filename} successfully downloaded`, {
-              stdout: true,
-            });
-
-            if (trackingMode) {
-              /** update the text file and add # in beginning of the line of successfully downloaded link */
-              updateListFile({
-                filePath: downloadListFileLocation,
-                link: linkToDownload,
-                status: "success",
-              });
-            }
-
-            resolve(true);
-          });
-
-          res.pipe(fileInFS);
         }
-      });
+
+        resolve(true);
+      }
+
+      const opts: http.RequestOptions = {
+        timeout: 2,
+        method: "GET",
+        protocol,
+        path: urlPath,
+        hostname,
+      };
+
+      if (protocol?.toLowerCase() === "https:") {
+        https.get(opts, res => {
+          if (res.statusCode === 200) {
+            /** file size in bytes */
+            const fileSize = res.headers["content-length"] as string;
+
+            const fileWriteStreamInFS = fs.createWriteStream(pathInFS);
+
+            progress.start(byteToMB(fileSize), 0);
+
+            res.on("error", onError);
+
+            res.on("data", onDataChunk);
+
+            res.on("end", onEnd);
+
+            res.pipe(fileWriteStreamInFS);
+          }
+        });
+      } else {
+        http.get(opts, res => {
+          if (res.statusCode === 200) {
+            /** file size in bytes */
+            const fileSize = res.headers["content-length"] as string;
+
+            const fileWriteStreamInFS = fs.createWriteStream(pathInFS);
+
+            progress.start(byteToMB(fileSize), 0);
+
+            res.on("error", onError);
+
+            res.on("data", onDataChunk);
+
+            res.on("end", onEnd);
+
+            res.pipe(fileWriteStreamInFS);
+          }
+        });
+      }
     });
   });
 }

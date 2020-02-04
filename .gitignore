@@ -22,5 +22,5 @@ test/fixtures/test*
 .idea
 
 out
-*.mkv
 *.txt
+downloads

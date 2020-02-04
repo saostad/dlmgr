@@ -3,9 +3,10 @@
 TODO:
 
 - [x] scrap a website and search for specific word in attribute of specific elements
-- [ ] get list of download files from file system
+- [x] get list of download files from file system
 - [ ] read configuration from config file
 - [ ] update readme to explain how to ignore some links from list files (with adding # in beginning of the file)
-- [ ] add tracking mode to updated list file with finished files to prevent from downloading it again
+- [x] add tracking mode to updated list file with finished files to prevent from downloading it again
 - [ ] change keyWord search to regex instead of simple include
-- [ ] add support for https links
+- [x] can handle http and https links
+- [ ] set timeout for receive packet to detect when servers stop sending or connection is slow
