@@ -1,10 +1,10 @@
 {
-  "name": "get-files",
+  "name": "dlmgr",
   "version": "1.0.0",
   "description": "Node.js Download Manager",
   "repository": {
     "type": "git",
-    "url": "https://github.com/saostad/get-files.git"
+    "url": "https://github.com/saostad/dlmgr.git"
   },
   "main": "dist/app.js",
   "types": "dist/app.d.ts",
