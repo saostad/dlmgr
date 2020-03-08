@@ -1,10 +1,10 @@
 {
-  "name": "create-ts-starter",
-  "version": "2.0.4",
-  "description": "Typescript Opinionated Starter/Boilerplate",
+  "name": "get-files",
+  "version": "1.0.0",
+  "description": "Node.js Download Manager",
   "repository": {
     "type": "git",
-    "url": "https://github.com/saostad/node-typescript-starter.git"
+    "url": "https://github.com/saostad/get-files.git"
   },
   "main": "dist/app.js",
   "types": "dist/app.d.ts",
@@ -25,8 +25,9 @@
   "keywords": [
     "node",
     "typescript",
-    "boilerplate",
-    "starter"
+    "downloader",
+    "download manager",
+    "manager"
   ],
   "author": "Saeid Ostad",
   "license": "MIT",
