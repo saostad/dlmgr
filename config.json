@@ -1,0 +1,10 @@
+{
+  "fetchUrl": "http://dl2.persian2movie.com/Ali/Serial/Louie/S01/",
+  "elementToFindInPage": "a",
+  "propToSearchInElements": "href",
+  "keyWord": "mkv",
+  "defaultDownloadDir": "./downloads",
+  "downloadDir": "undefined",
+  "trackingMode": true,
+  "downloadListFileLocation": "./export.txt"
+}

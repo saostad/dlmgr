@@ -3,6 +3,7 @@ import fs from "fs";
 import { scrap } from "./scraper";
 import { ScrapInput } from "./typings/interfaces";
 import { writeLog } from "fast-node-logger";
+import urlJoin from "url-join";
 
 export async function getListFromUri({
   uri,
@@ -10,12 +11,23 @@ export async function getListFromUri({
   propToSearchInElements,
   keyWord,
 }: ScrapInput) {
-  return scrap({
+  const rawLinks = await scrap({
     uri,
     keyWord,
     propToSearchInElements,
     elementToFindInPage,
   });
+
+  const correctedLinks: string[] = [];
+  rawLinks.forEach((link) => {
+    if (!(link.startsWith("http") || link.startsWith("https"))) {
+      console.warn(`link ${link} is invalid.`, "adding base uri to link.");
+      correctedLinks.push(urlJoin([uri, link]));
+    } else {
+      correctedLinks.push(link);
+    }
+  });
+  return correctedLinks;
 }
 
 interface GetListFromFileInput {
@@ -63,8 +75,8 @@ export async function saveListToFile({
 
     let counter = 0;
 
-    data.forEach(el => {
-      writeFileStream.write(`${el}\n`, err => {
+    data.forEach((el) => {
+      writeFileStream.write(`${el}\n`, (err) => {
         if (err) {
           writeLog(err, { level: "error" });
           reject(err);
