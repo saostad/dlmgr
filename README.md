@@ -12,3 +12,4 @@ TODO:
 - [x] can handle http and https links
 - [ ] set timeout for receive packet to detect when servers stop sending or connection is slow
 - [ ] pause and resume download progress
+- [ ] throw error when destination folder does not exist

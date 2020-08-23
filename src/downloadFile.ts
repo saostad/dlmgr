@@ -7,12 +7,6 @@ import fs from "fs";
 import cliProgress from "cli-progress";
 import { writeLog } from "fast-node-logger";
 import { byteToMB } from "./helpers/utils";
-import {
-  downloadDir,
-  defaultDownloadDir,
-  trackingMode,
-  downloadListFileLocation,
-} from "./helpers/variables";
 import { updateListFile } from "./downloadList";
 
 /** some websites redirect link to another location
@@ -30,14 +24,14 @@ function getRealLink(linkToCheck: string): Promise<string> {
     const { protocol, hostname } = url.parse(linkToCheck);
 
     if (protocol?.toLowerCase() === "https:") {
-      https.get(linkToCheck, res => {
+      https.get(linkToCheck, (res) => {
         if (res.statusCode?.toString().startsWith("2")) {
           /** thats a real file */
           res.destroy();
           resolve(linkToCheck);
         }
 
-        res.on("error", err => onError(err, reject));
+        res.on("error", (err) => onError(err, reject));
 
         if (res.statusCode === 302) {
           const newLocation = res.headers.location;
@@ -46,14 +40,14 @@ function getRealLink(linkToCheck: string): Promise<string> {
         }
       });
     } else {
-      http.get(linkToCheck, res => {
+      http.get(linkToCheck, (res) => {
         if (res.statusCode?.toString().startsWith("2")) {
           /** thats a real file */
           res.destroy();
           resolve(linkToCheck);
         }
 
-        res.on("error", err => onError(err, reject));
+        res.on("error", (err) => onError(err, reject));
 
         if (res.statusCode === 302) {
           const newLocation = res.headers.location;
@@ -65,7 +59,18 @@ function getRealLink(linkToCheck: string): Promise<string> {
   });
 }
 
-export function downloadFile(linkToDownload: string): Promise<boolean> {
+type DownloadFileInput = {
+  linkToDownload: string;
+  saveFilesToDir: string;
+  trackingMode: boolean;
+  downloadListFileLocation: string;
+};
+export function downloadFile({
+  linkToDownload,
+  saveFilesToDir,
+  trackingMode,
+  downloadListFileLocation,
+}: DownloadFileInput): Promise<boolean> {
   return new Promise((resolve, reject) => {
     const { protocol, hostname, pathname } = url.parse(linkToDownload);
 
@@ -78,9 +83,9 @@ export function downloadFile(linkToDownload: string): Promise<boolean> {
 
     const filename = pathname?.slice(pathname.lastIndexOf("/") + 1) as string;
 
-    const pathInFS = path.join(downloadDir ?? defaultDownloadDir, filename);
+    const pathInFS = path.join(saveFilesToDir, filename);
 
-    getRealLink(linkToDownload).then(checkedLink => {
+    getRealLink(linkToDownload).then((checkedLink) => {
       const { path: urlPath } = url.parse(checkedLink);
 
       let totalReceivedData = 0;
@@ -96,7 +101,11 @@ export function downloadFile(linkToDownload: string): Promise<boolean> {
         progress.update(byteToMB(totalReceivedData));
       }
 
-      function onEnd() {
+      type OnEndInput = {
+        trackingMode: boolean;
+        downloadListFileLocation: string;
+      };
+      function onEnd({ trackingMode, downloadListFileLocation }: OnEndInput) {
         progress.stop();
         writeLog(`${filename} successfully downloaded`, {
           stdout: true,
@@ -123,7 +132,7 @@ export function downloadFile(linkToDownload: string): Promise<boolean> {
       };
 
       if (protocol?.toLowerCase() === "https:") {
-        https.get(opts, res => {
+        https.get(opts, (res) => {
           if (res.statusCode === 200) {
             /** file size in bytes */
             const fileSize = res.headers["content-length"] as string;
@@ -142,7 +151,7 @@ export function downloadFile(linkToDownload: string): Promise<boolean> {
           }
         });
       } else {
-        http.get(opts, res => {
+        http.get(opts, (res) => {
           if (res.statusCode === 200) {
             /** file size in bytes */
             const fileSize = res.headers["content-length"] as string;
@@ -155,7 +164,9 @@ export function downloadFile(linkToDownload: string): Promise<boolean> {
 
             res.on("data", onDataChunk);
 
-            res.on("end", onEnd);
+            res.on("end", () =>
+              onEnd({ trackingMode, downloadListFileLocation }),
+            );
 
             res.pipe(fileWriteStreamInFS);
           }

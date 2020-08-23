@@ -6,13 +6,6 @@ import {
   saveListToFile,
   getListFromFile,
 } from "./downloadList";
-// import {
-//   fetchUrl,
-//   keyWord,
-//   propToSearchInElements,
-//   elementToFindInPage,
-//   downloadListFileLocation,
-// } from "./helpers/variables";
 
 export async function main() {
   await createLogger({
@@ -24,26 +17,31 @@ export async function main() {
 
   const config = require(path.join(process.cwd(), "config.json"));
 
-  const rawLinks = await getListFromUri({
-    uri: config.fetchUrl,
-    keyWord: config.keyWord,
-    propToSearchInElements: config.propToSearchInElements,
-    elementToFindInPage: config.elementToFindInPage,
-  });
+  // const rawLinks = await getListFromUri({
+  //   uri: config.fetchUrl,
+  //   keyWord: config.keyWord,
+  //   propToSearchInElements: config.propToSearchInElements,
+  //   elementToFindInPage: config.elementToFindInPage,
+  // });
 
-  await saveListToFile({
-    data: rawLinks,
+  // await saveListToFile({
+  //   data: rawLinks,
+  //   filePath: config.downloadListFileLocation,
+  // });
+
+  const rawLinks = await getListFromFile({
     filePath: config.downloadListFileLocation,
   });
-
-  // const rawLinks = await getListFromFile({
-  //   filePath: downloadListFileLocation,
-  // });
 
   async function* start() {
     let index = 0;
     while (index < rawLinks.length) {
-      const result = await downloadFile(rawLinks[index]).catch((err) => {
+      const result = await downloadFile({
+        linkToDownload: rawLinks[index],
+        saveFilesToDir: config.defaultDownloadDir,
+        downloadListFileLocation: config.downloadListFileLocation,
+        trackingMode: config.trackingMode,
+      }).catch((err) => {
         writeLog(err, { level: "error" });
       });
       index++;

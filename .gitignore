@@ -24,4 +24,5 @@ test/fixtures/test*
 out
 *.txt
 downloads
-dist
+dist/
+config.json
